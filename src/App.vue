@@ -9,30 +9,25 @@
       </div>
       <div id="button-controls">
         <div class="button_add">
-          <ejs-button :isPrimary="true" v-on:click.native="addItems">
+          <ejs-button :isPrimary="true" @click="addItems">
           Add</ejs-button>
         </div>
         <div class="button_clear">
-          <ejs-button :isPrimary="true" v-on:click.native="clearText">
+          <ejs-button :isPrimary="true" @click="clearText">
           Clear</ejs-button>
         </div>
         <div class="button_remove">
-          <ejs-button :isPrimary="true" v-on:click.native="removeItems">
+          <ejs-button :isPrimary="true" @click="removeItems">
           Remove</ejs-button>
-        </div>  
+        </div>
       </div>    
     </div>
 </template>
 
 <script>
-import Vue from "vue";
-import { DropDownListPlugin } from "@syncfusion/ej2-vue-dropdowns";
-Vue.use(DropDownListPlugin);
-import { ButtonPlugin } from "@syncfusion/ej2-vue-buttons";
-Vue.use(ButtonPlugin);
-
-export default Vue.extend({
-  data: function() {
+export default {
+  name: 'App',
+  data() {
     return {
         dataItem: [
           { Id: 'game1', Game: 'Baseball' },
@@ -40,24 +35,82 @@ export default Vue.extend({
           { Id: 'game3', Game: 'Volleyball' }
         ],
       dataFields: { text: 'Game', value: 'Id' },
+      gameCounter: 4, // Counter for generating unique IDs
+      availableGames: ['Football', 'Tennis', 'Cricket', 'Soccer', 'Hockey', 'Golf', 'Swimming', 'Boxing']
     };
   },
   methods: {
-    addItems: function(){
-       this.$refs.dropdownObj.addItem({Id: 'game4', Game: 'Football'}, 0);
+    addItems(){
+       // Add a random game from available games that's not already in the list
+       const currentGames = this.dataItem.map(item => item.Game);
+       const availableOptions = this.availableGames.filter(game => !currentGames.includes(game));
+       
+       if (availableOptions.length > 0) {
+         const randomGame = availableOptions[Math.floor(Math.random() * availableOptions.length)];
+         const newItem = { Id: `game${this.gameCounter}`, Game: randomGame };
+         
+         // Add to data source
+         this.dataItem.push(newItem);
+         
+         // Update dropdown
+         const dropdown = this.$refs.dropdownObj.ej2Instances;
+         dropdown.dataSource = this.dataItem;
+         dropdown.dataBind();
+         
+         this.gameCounter++;
+         
+         console.log(`Added: ${randomGame}`);
+       } else {
+         alert('All available games have been added!');
+       }
     },
-    clearText: function () {
-      this.$refs.dropdownObj.ej2Instances.value = null;
-      this.$refs.dropdownObj.dataBind();
+    clearText() {
+      // Clear the selected value
+      const dropdown = this.$refs.dropdownObj.ej2Instances;
+      dropdown.value = null;
+      dropdown.text = '';
+      dropdown.dataBind();
+      console.log('Cleared selected value');
     },
-    removeItems: function() {
-      if(this.$refs.dropdownObj.getItems().length > 1) {
-        this.$refs.dropdownObj.getItems()[0].remove();
-        this.$refs.dropdownObj.dataSource.splice(0, 1);
-        } 
+    removeItems() {
+      const dropdown = this.$refs.dropdownObj.ej2Instances;
+      
+      if(this.dataItem.length > 1) {
+        // Get currently selected item
+        const selectedValue = dropdown.value;
+        
+        if (selectedValue) {
+          // Remove the selected item
+          const selectedIndex = this.dataItem.findIndex(item => item.Id === selectedValue);
+          if (selectedIndex > -1) {
+            const removedGame = this.dataItem[selectedIndex].Game;
+            this.dataItem.splice(selectedIndex, 1);
+            
+            // Update dropdown
+            dropdown.dataSource = this.dataItem;
+            dropdown.value = null;
+            dropdown.text = '';
+            dropdown.dataBind();
+            
+            console.log(`Removed: ${removedGame}`);
+          }
+        } else {
+          // If no item is selected, remove the last item
+          const removedGame = this.dataItem[this.dataItem.length - 1].Game;
+          this.dataItem.pop();
+          
+          // Update dropdown
+          dropdown.dataSource = this.dataItem;
+          dropdown.dataBind();
+          
+          console.log(`Removed: ${removedGame}`);
+        }
+      } else {
+        alert('Cannot remove the last item!');
+      }
     } 
   }
-});
+};
 
 </script>
 <style>
